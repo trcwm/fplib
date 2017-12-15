@@ -156,11 +156,17 @@ public:
         {
             //TODO: handle error.
         }
+        return result;
     }
 
     void setInternalValue(uint32_t idx, uint32_t v)
     {
         m_data[idx] = v;
+    }
+
+    uint32_t getInternalValue(uint32_t idx) const
+    {
+        return m_data[idx];
     }
 
 protected:

@@ -3,6 +3,23 @@
 
 using namespace fplib;
 
+void displayNumber(const SFix &num)
+{
+    // multiply by 10
+    SFix a = num;
+
+    printf("0.");
+    while(a.fracBits() > 0)
+    {
+        SFix x8 = a.reinterpret(a.intBits()+3, a.fracBits()-3);    // mul by 8
+        SFix x2 = a.reinterpret(a.intBits()+1, a.fracBits()-1);    // mul by 2
+        a  = x8+x2;
+        SFix digit = a.removeLSBs(a.fracBits());    // just the integer bits please!
+        a = a - digit;
+        printf("%d", digit.getInternalValue(0));
+    }
+}
+
 bool testExtend()
 {
     SFix a(1,31);
@@ -70,7 +87,8 @@ bool testMul()
     if (r.toHexString() != "3fffffffffffffff0000000000000001")
     {
         std::string s = r.toHexString();
-        printf("Error: got %s\n", s.c_str());
+        printf("a,b positive\n");
+        printf("Error: got    %s\n", s.c_str());
         printf("       wanted 3fffffffffffffff0000000000000001\n");
         return false;
     }
@@ -80,7 +98,7 @@ bool testMul()
     // ************************************************************
 
     // set a to largest negative number
-    a.setInternalValue(0,0x00000000);
+    a.setInternalValue(0,0x00000001);
     a.setInternalValue(1,0x80000000);
 
     // set b to largest positive number
@@ -89,21 +107,23 @@ bool testMul()
 
     SFix r2 = a*b;
     SFix r3 = r2.negate();
-    if (r3.toHexString() != "3fffffffffffffff0000000000000001")
+    if (r3.toHexString() != "3fffffffffffffff0000000000000002")
     {
         std::string s = r3.toHexString();
-        printf("Error: got %s\n", s.c_str());
-        printf("       wanted 3fffffffffffffff0000000000000001\n");
+        printf("a negative, b positive\n");
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 3fffffffffffffff0000000000000002\n");
         return false;
     }
 
     SFix r4 = b*a;
     SFix r5 = r4.negate();
-    if (r5.toHexString() != "3fffffffffffffff0000000000000001")
+    if (r5.toHexString() != "3fffffffffffffff0000000000000002")
     {
         std::string s = r5.toHexString();
-        printf("Error: got %s\n", s.c_str());
-        printf("       wanted 3fffffffffffffff0000000000000001\n");
+        printf("a negative, b positive - reversed\n");
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 3fffffffffffffff0000000000000002\n");
         return false;
     }
 
@@ -112,11 +132,11 @@ bool testMul()
     // ************************************************************
 
     // set a to largest negative number
-    a.setInternalValue(0,0x00000000);
+    a.setInternalValue(0,0x00000001);
     a.setInternalValue(1,0x80000000);
 
     // set b to largest positive number
-    b.setInternalValue(0,0x00000000);
+    b.setInternalValue(0,0x00000001);
     b.setInternalValue(1,0x80000000);
 
     SFix r6 = a*b;
@@ -132,9 +152,141 @@ bool testMul()
     return true;
 }
 
+bool testAdd()
+{
+    SFix a(1,63);
+    SFix b(1,63);
+
+    // a largest positive value
+    a.setInternalValue(0, 0xFFFFFFFF);
+    a.setInternalValue(1, 0x7FFFFFFF);
+
+    // b largest positive value
+    b.setInternalValue(0, 0xFFFFFFFF);
+    b.setInternalValue(1, 0x7FFFFFFF);
+
+    SFix r = a+b;
+    if (r.toHexString() != "00000000fffffffffffffffe")
+    {
+        std::string s = r.toHexString();
+        printf("Error: got %s\n", s.c_str());
+        printf("       wanted 00000000fffffffffffffffe\n");
+
+        return false;
+    }
+
+    // a largest negative value
+    a.setInternalValue(0, 0xFFFFFFFF);
+    a.setInternalValue(1, 0xFFFFFFFF);
+
+    // b largest positive value
+    b.setInternalValue(0, 0xFFFFFFFF);
+    b.setInternalValue(1, 0xFFFFFFFF);
+
+    SFix r2 = a+b;
+    if (r2.toHexString() != "00000000fffffffffffffffe")
+    {
+        std::string s = r2.toHexString();
+        printf("Error: got %s\n", s.c_str());
+        printf("       wanted 00000000fffffffffffffffe\n");
+
+        return false;
+    }
+
+    return true;
+}
+
+bool testSubtract()
+{
+    SFix a(64+8+2,0);
+    SFix b(64+8+2,0);
+
+    a.setInternalValue(2, 0x123);
+    a.setInternalValue(1, 0x456789ab);
+    a.setInternalValue(0, 0xcdef0123);
+
+    b.setInternalValue(1, 0x0000007E);
+    b.setInternalValue(1, 0x47381958);
+    b.setInternalValue(0, 0x37439183);
+
+    SFix r1 = a-b;
+    if (r1.toHexString() != "000000a4fe2f705396ab6fa0")
+    {
+        std::string s = r1.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 000000a4fe2f705396ab6fa0\n");
+
+        return false;
+    }
+
+    return true;
+}
+
+bool powerCheck()
+{
+    SFix a(64+8+2,0);
+    a.setInternalValue(2,0x123);
+    a.setInternalValue(1,0x456789ab);
+    a.setInternalValue(0,0xcdef0123);
+    SFix r1 = a*a;
+
+    if (r1.toHexString() != "00014b66dc33f6acdca878385a55a1b72d5b4ac9")
+    {
+        std::string s = r1.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 00014b66dc33f6acdca878385a55a1b72d5b4ac9\n");
+
+        return false;
+    }
+
+    return true;
+}
+
+void oneDivXTest()
+{
+    SFix b(8,0);
+    SFix two(3,0);
+    b.setInternalValue(0,14);   // 14.0
+    two.setInternalValue(0,2);  // 2.0
+
+    const uint32_t precision = 128;
+
+    SFix x(8,precision);
+    x.setInternalValue(precision/32-1,0x00000010);    // ?
+    for(uint32_t i=0; i<50; i++)
+    {
+        //x = x*(two-b*x);
+        x = x.reinterpret(x.intBits()+1, x.fracBits()-1) - x*x*b;
+        x = x.removeMSBs(x.intBits()-8);
+        x = x.removeLSBs(x.fracBits()-precision);
+
+        std::string s = x.toHexString();
+        printf("x -> %s\n", s.c_str());
+    }
+
+    displayNumber(x);
+}
 
 int main()
 {
+    if (testAdd())
+    {
+        printf("Add test passed\n");
+    }
+    else
+    {
+        printf("Add test failed\n");
+    }
+
+    if (testSubtract())
+    {
+        printf("Subtract test passed\n");
+    }
+    else
+    {
+        printf("Subtract test failed\n");
+    }
+
     if (testMul())
     {
         printf("Mul test passed\n");
@@ -152,6 +304,17 @@ int main()
     {
         printf("Extend test failed\n");
     }
+
+    if (powerCheck())
+    {
+        printf("powerCheck test passed\n");
+    }
+    else
+    {
+        printf("powerCheck test failed\n");
+    }
+
+    oneDivXTest();
 
     return 0;
 }

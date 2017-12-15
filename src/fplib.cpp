@@ -88,11 +88,12 @@ SFix SFix::removeLSBs(uint32_t bits)
     uint32_t N2=m_data.size();
     for(uint32_t i=0; i<N; i++)
     {
-        result.m_data[i] = m_data[i] >> shift;
-        if (i+1 < N2)
+        result.m_data[i] = m_data[idx] >> shift;
+        if ((idx+1) < N2)
         {
-            result.m_data[i] |= m_data[i+1] << (32-shift);
+            result.m_data[i] |= (m_data[idx+1] << (32-shift));
         }
+        idx++;
     }
 
     return result;
@@ -140,6 +141,7 @@ std::string SFix::toHexString() const
     {
         stream << std::setw(sizeof(uint32_t)*2);
         stream << m_data[N-i-1];
+        //if (i != (N-1)) stream << "_";
     }
     return stream.str();
 }
@@ -152,14 +154,46 @@ void SFix::internal_add(const SFix &a, const SFix &b, SFix &result)
         // internal error!
     }
 
-    uint32_t N = 1+std::min(a.m_intBits, b.m_intBits)/32;
+    uint32_t N  = std::min(a.m_data.size(), b.m_data.size());   // #words in smallest operand
+    uint32_t N2 = std::max(a.m_data.size(), b.m_data.size());   // #words in largest operand
+
+    // add 32-bit words together until we run out of
+    // words on one of the two operands a or b.
+    // then continue sign-extending the operand
+    // that has run out of bits...
+    uint32_t idx = 0;
     bool carry = false;
-    for(uint32_t i=0; i<N; i++)
+    while(idx < N)
     {
-        carry = addUWords(a.m_data[i], b.m_data[i], carry, result.m_data[i]);
+        carry = addUWords(a.m_data[idx], b.m_data[idx], carry, result.m_data[idx]);
+        idx++;
     }
 
-    if ((carry) && (N < result.m_data.size()))
+    // were, one of the two operands might have run out of bits
+    // check which one, if any
+    if (a.m_data.size() == N)
+    {
+        uint32_t extended = a.isNegative() ? 0xFFFFFFFF : 0;
+        // operand a is smaller, and should be sign extended
+        while(idx < N2)
+        {
+            carry = addUWords(extended, b.m_data[idx], carry, result.m_data[idx]);
+            idx++;
+        }
+    }
+    else if (b.m_data.size() == N)
+    {
+        uint32_t extended = b.isNegative() ? 0xFFFFFFFF : 0;
+        // operand a is smaller, and should be sign extended
+        while(idx < N2)
+        {
+            carry = addUWords(a.m_data[idx], extended, carry, result.m_data[idx]);
+            idx++;
+        }
+    }
+
+    //finally, propagate carry to final output word
+    if ((carry) && (idx < result.m_data.size()))
     {
         result.m_data[N]++;
     }
@@ -173,20 +207,43 @@ void SFix::internal_add(const SFix &a, bool invA, SFix &result)
         // internal error!
     }
 
-    uint32_t N = 1+std::min(a.m_intBits, result.m_intBits)/32;
+    // add 32-bit words together until we run out of bits
+    uint32_t N  = a.m_data.size();
+    uint32_t N2 = result.m_data.size();
+    uint32_t idx = 0;
     bool carry = false;
-    for(uint32_t i=0; i<N; i++)
+    while(idx < N)
     {
         if (invA)
-            carry = addUWords(~a.m_data[i], result.m_data[i], carry, result.m_data[i]);
+        {
+            carry = addUWords(~a.m_data[idx], result.m_data[idx], carry, result.m_data[idx]);
+        }
         else
-            carry = addUWords(a.m_data[i], result.m_data[i], carry, result.m_data[i]);
+        {
+            carry = addUWords(a.m_data[idx], result.m_data[idx], carry, result.m_data[idx]);
+        }
+        idx++;
     }
 
+    // check if result has more bits than operand a
+    if (result.m_data.size() != N)
+    {
+        uint32_t extended = (a.isNegative() ^ invA) ? 0xFFFFFFFF : 0;
+        // operand a is smaller, and should be sign extended
+        while(idx < N2)
+        {
+            carry = addUWords(extended, result.m_data[idx], carry, result.m_data[idx]);
+            idx++;
+        }
+    }
+
+#if 0
+    //TODO: carry propagation!
     if ((carry) && (N < result.m_data.size()))
     {
         result.m_data[N]++;
     }
+#endif
 }
 
 void SFix::internal_invert(SFix &result) const
@@ -218,6 +275,7 @@ void SFix::internal_sub(const SFix &a, const SFix &b, SFix &result)
         // internal error!
     }
 
+#if 0
     // Note:
     //
     // a - b = a + (~b + 1) using 2's complement
@@ -225,17 +283,23 @@ void SFix::internal_sub(const SFix &a, const SFix &b, SFix &result)
     // we can use addUWords to subtract!
     //
 
-    uint32_t N = 1+std::min(a.m_intBits, b.m_intBits)/32;
-    bool carry = false;
+    uint32_t N = std::min(a.m_data.size(), b.m_data.size());
+    bool carry = true;
     for(uint32_t i=0; i<N; i++)
     {
-        carry = addUWords(a.m_data[i], ~b.m_data[i], !carry, result.m_data[i]);
+        carry = addUWords(a.m_data[i], ~b.m_data[i], carry, result.m_data[i]);
     }
 
-    if ((!carry) && (N < result.m_data.size()))
+    //TODO: carry propagation!
+
+    if ((carry) && (N < result.m_data.size()))
     {
-        result.m_data[N]--;
+        result.m_data[N]++;
     }
+#endif
+
+    SFix tmp = b.negate();
+    internal_add(a,tmp,result);
 }
 
 void SFix::internal_umul(const SFix &a, const SFix &b, bool invA, bool invB, SFix &result)
@@ -295,10 +359,20 @@ void SFix::internal_mul(const SFix &a, const SFix &b, SFix &result)
     internal_umul(a,b,Ainv,Binv,result);
     if (Ainv && Binv)
     {
-        // ~[(~a+1)*(~b+1)]+1 = ~[~a*~b + b + a + 1]+1
-        // ~[~a*~b] + ~b + ~a
+        // ~[(~a+1)*(~b+1)]+1 = ~[~a*~b + ~b + ~a + 1]+1
+        // ~[~a*~b] + ~b + ~a - 1
+#if 0
+        internal_invert(result);
         internal_add(a, false, result);
         internal_add(b, false, result);
+        // TODO: decrement by one
+#else
+        internal_add(a, true, result);
+        internal_add(b, true, result);
+        internal_increment(result);
+        internal_invert(result);
+        internal_increment(result);
+#endif
     }
     else if (Ainv && (!Binv))
     {
@@ -311,7 +385,7 @@ void SFix::internal_mul(const SFix &a, const SFix &b, SFix &result)
     else if ((!Ainv) && Binv)
     {
         // ~[a * (~b + 1)] + 1 = ~[a*~b + a] + 1
-        //                     = ~[~a*b] + ~a + 1
+        //                     = ~[a*~b] + ~a + 1
         internal_invert(result);
         internal_add(a, true, result);
         internal_increment(result);
