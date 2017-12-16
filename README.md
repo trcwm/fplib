@@ -1,4 +1,4 @@
-# FPLIB<br>An unlimited precision fixed-point library for C++
+# FPLIB<br>An arbitrary precision fixed-point library for C++
 
 Author: Niels A. Moseley / Moseley Instruments.
 
