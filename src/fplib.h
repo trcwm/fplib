@@ -175,13 +175,13 @@ protected:
     bool addUWords(uint32_t a, uint32_t b, bool carry_in, uint32_t &result) const;
 
     /** add a to b producing a result. */
-    void internal_add(const SFix &a, const SFix &b, SFix &result);
+    void internal_add(const SFix &a, const SFix &b, SFix &result) const;
 
     /** add a to result. */
     void internal_add(const SFix &a, bool invA, SFix &result);
 
     /** subtract b from a producing a result. */
-    void internal_sub(const SFix &a, const SFix &b, SFix &result);
+    void internal_sub(const SFix &a, const SFix &b, SFix &result) const;
 
     /** add a to b producing a result. Note: this will only
         handle unsigned a and b correctly! post processing

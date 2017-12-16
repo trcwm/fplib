@@ -8,20 +8,36 @@
 #include <iostream>
 #include <iomanip>
 #include "fplib.h"
+#include <intrin.h>
 
 using namespace fplib;
 
 bool SFix::addUWords(uint32_t a, uint32_t b, bool carry_in, uint32_t &result) const
 {
+#if 0
     bool carry_out = false;
 
-    result = a + b + (carry_in ? 1:0);
+    result = a + b;
     if (result < a)
         carry_out = true;
     if (result < b)
-        carry_out = true;        
+        carry_out = true;
 
+    if (carry_in)
+    {
+        if (result == 0xFFFFFFFFUL)
+        {
+            carry_out = true;
+        }
+        result++;
+    }
     return carry_out;
+#endif
+
+    if (_addcarry_u32(carry_in ? 1:0, a, b, &result) != 0)
+        return true;
+
+    return false;
 }
 
 /** extend LSBs / fractional bits */
@@ -34,14 +50,15 @@ SFix SFix::extendLSBs(uint32_t bits) const
 
     uint32_t idx = addWords;    // index into data array
     const uint32_t N = m_data.size();  // number of words of original
+    const uint32_t N2 = result.m_data.size();
     for(uint32_t i=0; i<N; i++)
     {
-        result.m_data[idx] = m_data[i] << shiftBits;
-        if (i > 0)
-        {
-            result.m_data[idx] |= (m_data[i-1] >> (32-shiftBits));
-        }
+        result.m_data[idx] |= m_data[i] << shiftBits;
         idx++;
+        if (idx < N2)
+        {
+            result.m_data[idx] = (m_data[i] >> (32-shiftBits));
+        }
     }
 
     return result;
@@ -89,11 +106,11 @@ SFix SFix::removeLSBs(uint32_t bits)
     for(uint32_t i=0; i<N; i++)
     {
         result.m_data[i] = m_data[idx] >> shift;
-        if ((idx+1) < N2)
-        {
-            result.m_data[i] |= (m_data[idx+1] << (32-shift));
-        }
         idx++;
+        if (idx < N2)
+        {
+            result.m_data[i] |= (m_data[idx] << (32-shift));
+        }
     }
 
     return result;
@@ -146,7 +163,7 @@ std::string SFix::toHexString() const
     return stream.str();
 }
 
-void SFix::internal_add(const SFix &a, const SFix &b, SFix &result)
+void SFix::internal_add(const SFix &a, const SFix &b, SFix &result) const
 {
     // sanity check:
     if ((a.m_fracBits != b.m_fracBits) || (a.m_fracBits != result.m_fracBits))
@@ -267,7 +284,7 @@ void SFix::internal_increment(SFix &result) const
     }
 }
 
-void SFix::internal_sub(const SFix &a, const SFix &b, SFix &result)
+void SFix::internal_sub(const SFix &a, const SFix &b, SFix &result) const
 {
     // sanity check:
     if ((a.m_fracBits != b.m_fracBits) || (a.m_fracBits != result.m_fracBits))
