@@ -66,7 +66,7 @@ bool mulTest()
     b.fromBinString("01111111");
 
     SFixRef c = a*b;
-#if 1
+#if 0
     printf(" a = %s\n", a.toBinString().c_str());
     printf(" b = %s\n", b.toBinString().c_str());
     printf(" c = %s\n", c.toBinString().c_str());
@@ -105,11 +105,93 @@ bool mulTest()
     return true;
 }
 
+bool doExtendTest()
+{
+    SFixRef a(1,15);
+    a.fromBinString("1100000000000000");
+    SFixRef b = a.removeLSBs(14);
+    if (b.toBinString() != "11")
+    {
+        printf("extendTest 1 failed\n");
+        printf("  got:    %s\n", b.toBinString().c_str());
+        printf("  wanted: 11\n");
+        return false;
+    }
+
+    SFixRef c = b.extendMSBs(2);
+    if (c.toBinString() != "1111")
+    {
+        printf("extendTest 2 failed\n");
+        printf("  got:    %s\n", c.toBinString().c_str());
+        printf("  wanted: 1111\n");
+        return false;
+    }
+
+    SFixRef d = c.extendLSBs(2);
+    if (d.toBinString() != "111100")
+    {
+        printf("extendTest 3 failed\n");
+        printf("  got:    %s\n", d.toBinString().c_str());
+        printf("  wanted: 111100\n");
+        return false;
+    }
+
+    return true;
+}
+
+void oneDivXTest()
+{
+    SFixRef b(8,0);
+    b.fromHexString("0E");  // 14
+
+    const uint32_t precision = 256;
+
+    SFixRef x(8,32);
+    x.fromHexString("0000000100");
+    x = x.extendLSBs(precision-x.fracBits());
+
+    for(uint32_t i=0; i<30; i++)
+    {
+        //x = x*(two-b*x);
+        x = x.reinterpret(x.intBits()+1, x.fracBits()-1) - x*x*b;
+        x = x.removeMSBs(x.intBits()-8);
+        x = x.removeLSBs(x.fracBits()-precision);
+
+        std::string s = x.toHexString();
+        printf("x -> %s\n", s.c_str());
+    }
+
+    printf("x (dec) -> %s\n", x.toDecString().c_str());
+
+    //displayNumber(x);
+}
+
+bool hexTest()
+{
+    SFixRef a(16,0);
+    a.fromHexString("0123");
+    if (a.toHexString() != "0123")
+    {
+        printf("test 1\n");
+        std::string s = a.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 0123\n");
+
+        return false;
+    }
+    return true;
+}
+
 bool doTests()
 {
     if (!binTest()) return false;
+    if (!hexTest()) return false;
     if (!addTest()) return false;
     if (!mulTest()) return false;
+    if (!doExtendTest()) return false;
+
+    oneDivXTest();
+
     return true;
 }
 

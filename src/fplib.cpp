@@ -356,6 +356,7 @@ void SFix::internal_umul(const SFix &a, const SFix &b, bool invA, bool invB, SFi
             if (idx < N3)
             {
                 carry = addUWords(static_cast<uint32_t>(m>>32), result.m_data[idx], carry, result.m_data[idx]);
+                m = 0; // use the product only once! :)
                 idx++;
             };
             // propagate carry if necessary

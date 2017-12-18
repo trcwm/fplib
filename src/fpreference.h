@@ -117,13 +117,13 @@ public:
     SFixRef extendLSBs(uint32_t bits) const;
 
     /** extend MSBs / integer bits */
-    SFixRef extendMSBs(uint32_t bits);
+    SFixRef extendMSBs(uint32_t bits) const;
 
     /** remove LSBs / fractional bits */
-    SFixRef removeLSBs(uint32_t bits);
+    SFixRef removeLSBs(uint32_t bits) const;
 
     /** remove MSBs / integer bits */
-    SFixRef removeMSBs(uint32_t bits);
+    SFixRef removeMSBs(uint32_t bits) const;
 
     /** change the Q(intBits,fracBits) qualifier to cheaply
         shift the factional point */
@@ -156,6 +156,15 @@ public:
 
     /** to hex string */
     std::string toBinString() const;
+
+    /** load number from a hex string */
+    bool fromHexString(const std::string &hex);
+
+    /** convert the fixed point number to a hex string */
+    std::string toHexString() const;
+
+    /** convert the fixed-point number to a decimal string */
+    std::string toDecString() const;
 
 protected:
     /** add a to b producing a result. Note: this will only

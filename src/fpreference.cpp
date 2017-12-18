@@ -179,9 +179,9 @@ void SFixRef::internal_add(const SFixRef &a, const SFixRef &b, SFixRef &result) 
         // internal error!
     }
 
-    uint32_t N  = std::min(a.m_bits.size(), b.m_bits.size());   // #words in smallest operand
-    uint32_t N2 = std::max(a.m_bits.size(), b.m_bits.size());   // #words in largest operand
-    uint32_t N3 = result.m_bits.size();
+    const uint32_t N  = std::min(a.m_bits.size(), b.m_bits.size());   // #words in smallest operand
+    const uint32_t N2 = std::max(a.m_bits.size(), b.m_bits.size());   // #words in largest operand
+    const uint32_t N3 = result.m_bits.size();
 
     uint32_t idx = 0;
     bool carry = false;
@@ -249,7 +249,7 @@ void SFixRef::internal_sub(const SFixRef &a, const SFixRef &b, SFixRef &result) 
 SFixRef SFixRef::negate() const
 {
     SFixRef result(m_intBits, m_fracBits);
-    uint32_t N=result.m_bits.size();
+    const uint32_t N=result.m_bits.size();
 
     for(uint32_t i=0; i<N; i++)
     {
@@ -262,7 +262,7 @@ SFixRef SFixRef::negate() const
 /** increment by one */
 void SFixRef::internal_increment(SFixRef &result) const
 {
-    uint32_t N = result.m_bits.size();
+    const uint32_t N = result.m_bits.size();
     uint32_t idx = 0;
 
     bool aa = false;
@@ -279,7 +279,7 @@ void SFixRef::internal_increment(SFixRef &result) const
 /** invert bits */
 void SFixRef::internal_invert(SFixRef &result) const
 {
-    uint32_t N=result.m_bits.size();
+    const uint32_t N=result.m_bits.size();
 
     for(uint32_t i=0; i<N; i++)
     {
@@ -292,7 +292,7 @@ void SFixRef::fromBinString(const std::string &bin)
 {
     auto iter = bin.rbegin();
     uint32_t idx = 0;
-    uint32_t N = m_bits.size();
+    const uint32_t N = m_bits.size();
     while(iter != bin.rend())
     {
         if (idx >= N) return; // safety
@@ -324,4 +324,184 @@ SFixRef SFixRef::extendLSBs(uint32_t bits) const
         result.m_bits[bits + i] = m_bits[i];
     }
     return result;
+}
+
+/** extend MSBs / integer bits */
+SFixRef SFixRef::extendMSBs(uint32_t bits) const
+{
+    SFixRef result(m_intBits+bits, m_fracBits);
+    const uint32_t N = m_bits.size();
+
+    for(uint32_t i=0; i<m_bits.size(); i++)
+    {
+        result.m_bits[i] = m_bits[i];
+    }
+
+    bool sext = isNegative();
+    for(uint32_t i=0; i<bits; i++)
+    {
+        result.m_bits[N+i] = sext;
+    }
+    return result;
+}
+
+/** remove LSBs / fractional bits */
+SFixRef SFixRef::removeLSBs(uint32_t bits) const
+{
+    SFixRef result(m_intBits, m_fracBits);  // first allocate full size number
+    result.m_bits = m_bits;
+    result.m_bits.erase(result.m_bits.begin(), result.m_bits.begin()+bits); // then erase..
+    result.m_fracBits -= bits;
+    return result;
+}
+
+/** remove MSBs / integer bits */
+SFixRef SFixRef::removeMSBs(uint32_t bits) const
+{
+    SFixRef result(m_intBits-bits, m_fracBits);
+    const uint32_t N = result.m_bits.size();
+    for(uint32_t i=0; i<N; i++)
+    {
+        result.m_bits[i] = m_bits[i];
+    }
+    return result;
+}
+
+bool SFixRef::fromHexString(const std::string &hex)
+{
+    // use reverse iterator: start at LSB.
+    auto iter = hex.rbegin();
+    const uint32_t N = m_bits.size();
+    uint32_t idx = 0;
+    while(iter != hex.rend())
+    {
+        uint8_t nibble = 0;
+        char c = *iter;
+        if ((c>='0') && (c<='9'))
+        {
+            nibble = c - '0';
+        }
+        else if ((c>='A') && (c<='F'))
+        {
+            nibble = c - 'A' + 10;
+        }
+        else if ((c>='a') && (c<='f'))
+        {
+            nibble = c - 'a' + 10;
+        }
+        else
+        {
+            // non-hex character found!
+            return false;
+        }
+
+        uint32_t count = N;
+        for(uint32_t i=0; i<4; i++)
+        {
+            if (count > 0)
+            {
+                //m_bits[idx++] = (((nibble >> (3-i)) & 0x01) != 0);
+                m_bits[idx++] = (((nibble >> i) & 0x01) != 0);
+            }
+            else
+            {
+                // cannot store any more bits
+                return true;
+            }
+            count--;
+        }
+        iter++;
+    }
+    // end of hex string
+    return true;
+}
+
+std::string SFixRef::toHexString() const
+{
+    const uint32_t N = m_bits.size();
+    uint8_t nibble = 0;
+    uint32_t idx = 0;
+    uint32_t count = 0;
+    std::string hex;
+    while(idx < N)
+    {
+        nibble >>= 1;
+        nibble |= m_bits[idx] ? 8:0;    // set the high bit in the nibble.
+        count++;
+        if (count == 4)
+        {
+            if ((nibble > 9) && (nibble < 16))
+            {
+                hex = static_cast<char>(nibble-10+'a') + hex;
+            }
+            else if (nibble < 10)
+            {
+                hex = static_cast<char>(nibble+'0') + hex;
+            }
+            else
+            {
+                hex = '?' + hex;
+            }
+            count = 0;
+        }
+        idx++;
+    }
+    return hex;
+}
+
+std::string SFixRef::toDecString() const
+{
+    std::string num;
+
+#if 0
+    // multiply by 10
+    SFixRef a = *this;
+
+    if (a.isNegative())
+    {
+        printf("-");
+        a = a.negate();
+    }
+
+    // extract the integer part
+    if (a.intBits() > 0)
+    {
+        SFixRef b(0,0);
+
+        if (a.fracBits() > 0)
+        {
+            b = a.removeLSBs(a.fracBits());
+        }
+        else if (a.fracBits() < 0)
+        {
+            b = a.extendLSBs(-a.fracBits());
+        }
+        // process integer part
+
+    }
+    else
+    {
+        printf("0.");
+    }
+#endif
+
+    SFixRef a = *this;
+
+    if (a.isNegative())
+    {
+        printf("-");
+        a = a.negate();
+    }
+
+    while(a.fracBits() > 0)
+    {
+        SFixRef x8 = a.reinterpret(a.intBits()+3, a.fracBits()-3);    // mul by 8
+        SFixRef x2 = a.reinterpret(a.intBits()+1, a.fracBits()-1);    // mul by 2
+        a  = x8+x2;
+        SFixRef digit = a.removeLSBs(a.fracBits());    // just the integer bits please!
+        digit = digit.removeMSBs(digit.intBits()-4);
+        a = a - digit;
+        num += digit.toHexString();
+    }
+    return num;
 }
