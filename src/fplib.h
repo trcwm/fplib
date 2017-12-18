@@ -2,6 +2,9 @@
 
     FPLIB: a library providing a fixed-point datatype.
 
+    N.A. Moseley 2017
+    License: T.B.D.
+
 */
 
 #ifndef fplib_h

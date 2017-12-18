@@ -1,4 +1,5 @@
 
+#include "reftest.h"
 #include "../src/fplib.h"
 
 using namespace fplib;
@@ -363,6 +364,16 @@ void oneDivXTest()
 
 int main()
 {
+    if (tests::doTests())
+    {
+        printf("Reference tests passed\n");
+    }
+    else
+    {
+        printf("Reference tests failed\n");
+    }
+
+
     if (testAdd())
     {
         printf("Add test passed\n");

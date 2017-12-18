@@ -4,6 +4,11 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 
-HEADERS += ../src/fplib.h
+HEADERS += ../src/fplib.h \
+           ../src/fpreference.h \
+           reftest.h
+
 SOURCES += main.cpp \
-           ../src/fplib.cpp
+           reftest.cpp \
+           ../src/fplib.cpp \
+           ../src/fpreference.cpp
