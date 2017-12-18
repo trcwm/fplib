@@ -108,6 +108,23 @@ bool testExtend()
     return true;
 }
 
+bool testRemove()
+{
+    SFix a(8,48);
+    a.setInternalValue(1,0x7f003f);
+    a.setInternalValue(0,0xffffffff);
+    SFix r = a.removeLSBs(4+3+32-8);    // Q(8,17)
+    if (r.toHexString() != "00fe0000")
+    {
+        printf("test 1\n");
+        std::string s = r.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 0FE0000\n");
+        return false;
+    }
+    return true;
+}
+
 bool testMul()
 {
     SFix a(1,63);
@@ -339,20 +356,24 @@ bool powerCheck()
 void oneDivXTest()
 {
     SFix b(8,0);
-    SFix two(3,0);
     b.setInternalValue(0,14);   // 14.0
-    two.setInternalValue(0,2);  // 2.0
 
     const uint32_t intbits = 8;
     const uint32_t precision = 256;
 
     SFix x(intbits,precision);
     x.setInternalValue((precision/32)-1,0x00000100);    // ?
-    for(uint32_t i=0; i<30; i++)
+    for(uint32_t i=0; i<10; i++)
     {
         //x = x*(two-b*x);
         x = x.reinterpret(x.intBits()+1, x.fracBits()-1) - x*x*b;
+
+        //std::string s = x.toHexString();
+        //printf("x1 -> %s\n", s.c_str());
         x = x.removeMSBs(x.intBits()-intbits);
+
+        //s = x.toHexString();
+        //printf("x2 -> %s\n", s.c_str());
         x = x.removeLSBs(x.fracBits()-precision);
 
         std::string s = x.toHexString();
@@ -408,6 +429,15 @@ int main()
     else
     {
         printf("Extend test failed\n");
+    }
+
+    if (testRemove())
+    {
+        printf("Remove test passed\n");
+    }
+    else
+    {
+        printf("Remove test failed\n");
     }
 
     if (powerCheck())

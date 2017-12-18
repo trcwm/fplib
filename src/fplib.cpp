@@ -99,7 +99,7 @@ SFix SFix::removeLSBs(uint32_t bits)
     SFix result(m_intBits, m_fracBits-bits);
 
     uint32_t idx = bits / 32;
-    uint32_t shift = bits % 32;
+    const uint32_t shift = bits % 32;
 
     uint32_t N=result.m_data.size();
     uint32_t N2=m_data.size();
@@ -107,8 +107,8 @@ SFix SFix::removeLSBs(uint32_t bits)
     {
         result.m_data[i] = m_data[idx] >> shift;
         idx++;
-        if (idx < N2)
-        {
+        if ((shift != 0) && (idx < N2))
+        {            
             result.m_data[i] |= (m_data[idx] << (32-shift));
         }
     }
@@ -356,7 +356,6 @@ void SFix::internal_umul(const SFix &a, const SFix &b, bool invA, bool invB, SFi
             if (idx < N3)
             {
                 carry = addUWords(static_cast<uint32_t>(m>>32), result.m_data[idx], carry, result.m_data[idx]);
-                m = 0; // use the product only once! :)
                 idx++;
             };
             // propagate carry if necessary
