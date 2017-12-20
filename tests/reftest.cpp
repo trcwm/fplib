@@ -161,7 +161,7 @@ void oneDivXTest()
         printf("x -> %s\n", s.c_str());
     }
 
-    printf("x (dec) -> %s\n", x.toDecString().c_str());
+    printf("x (dec) -> 0.%s\n", x.toDecString().c_str());
 
     //displayNumber(x);
 }

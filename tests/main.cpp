@@ -114,12 +114,12 @@ bool testRemove()
     a.setInternalValue(1,0x7f003f);
     a.setInternalValue(0,0xffffffff);
     SFix r = a.removeLSBs(4+3+32-8);    // Q(8,17)
-    if (r.toHexString() != "00fe0000")
+    if (r.toHexString() != "00fe007f")
     {
         printf("test 1\n");
         std::string s = r.toHexString();
         printf("Error: got    %s\n", s.c_str());
-        printf("       wanted 0FE0000\n");
+        printf("       wanted 00fe007f\n");
         return false;
     }
     return true;
@@ -252,12 +252,12 @@ bool testAdd()
     b.setInternalValue(1, 0xFFFFFFFF);
 
     SFix r2 = a+b;
-    if (r2.toHexString() != "00000000fffffffffffffffe")
+    if (r2.toHexString() != "00000001fffffffffffffffe")
     {
         printf("test 2\n");
         std::string s = r2.toHexString();
         printf("Error: got %s\n", s.c_str());
-        printf("       wanted 00000000fffffffffffffffe\n");
+        printf("       wanted 00000001fffffffffffffffe\n");
 
         return false;
     }
@@ -355,15 +355,29 @@ bool powerCheck()
 
 void oneDivXTest()
 {
+    // iterate using:
+    //
+    // x = x*(2-b*x)
+    //
+    // where 1/b is the desired quotient.
+    // Note that the starting x _must_ be
+    // larger than 1 and that b*x
+    // must be smaller than x
+
     SFix b(8,0);
     b.setInternalValue(0,14);   // 14.0
 
     const uint32_t intbits = 8;
     const uint32_t precision = 256;
 
+    printf("\n");
+    printf("------------------------------------------------\n");
+    printf(" Calculate 1/%d using an iterative method\n", 14);
+    printf("------------------------------------------------\n");
+
     SFix x(intbits,precision);
-    x.setInternalValue((precision/32)-1,0x00000100);    // ?
-    for(uint32_t i=0; i<10; i++)
+    x.setInternalValue((precision/32)-1,0x000010000);    // ?
+    for(uint32_t i=0; i<30; i++)
     {
         //x = x*(two-b*x);
         x = x.reinterpret(x.intBits()+1, x.fracBits()-1) - x*x*b;
@@ -380,11 +394,66 @@ void oneDivXTest()
         printf("x -> %s\n", s.c_str());
     }
 
+    printf("result = 0.");
     displayNumber(x);
+}
+
+void bisectionSqrt()
+{
+    //
+    // calculate sqrt(rootOf) using the
+    // bisection method.
+    // https://en.wikipedia.org/wiki/Bisection_method
+    //
+
+    const uint32_t fbits = 2048;
+    SFix l(8,fbits);   // left point of the interval
+    SFix r(8,fbits);   // right point of the interval
+    SFix c(8,0);    // root to be found
+
+    uint32_t rootOf = 2;
+    r.setInternalValue(fbits/32,rootOf);
+    c.setInternalValue(0,rootOf);
+
+    for(uint32_t i=0; i<fbits; i++)
+    {
+        // create a new middle point
+        SFix m = r+l;
+        m = m.reinterpret(m.intBits()-1, m.fracBits()+1);   // divide by two
+        m = m.removeLSBs(m.fracBits()-fbits);
+
+        SFix m2 = m*m-c;
+
+        if (m2.isNegative())
+        {
+            // if m is negative, m is below the root
+            // so we can move the left point to m
+            l = m;
+        }
+        else
+        {
+            // if m is negative, m is above the root
+            // so we can move the right point to m
+            r = m;
+        }
+    }
+    std::string s1 = l.toHexString();
+    std::string s2 = r.toHexString();
+
+    printf("\n");
+    printf("------------------------------------------------\n");
+    printf(" Square root calculation using bisection method\n");
+    printf("------------------------------------------------\n");
+    printf("Sqrt(%d):\n", rootOf);
+    printf("l -> %s / 2^%d\n", s1.c_str(), fbits);
+    printf("r -> %s / 2^%d\n", s2.c_str(), fbits);
 }
 
 int main()
 {
+    printf("------------------------------------------------\n");
+    printf(" Slow reference library tests\n");
+    printf("------------------------------------------------\n\n");
     if (tests::doTests())
     {
         printf("Reference tests passed\n");
@@ -394,6 +463,9 @@ int main()
         printf("Reference tests failed\n");
     }
 
+    printf("\n\n------------------------------------------------\n");
+    printf(" Fast 32-bit library tests\n");
+    printf("------------------------------------------------\n\n");
 
     if (testAdd())
     {
@@ -450,6 +522,7 @@ int main()
     }
 
     oneDivXTest();
+    bisectionSqrt();
 
     return 0;
 }
