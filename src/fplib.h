@@ -21,6 +21,12 @@ namespace fplib
 class SFix
 {
 public:
+    /** create an undefined fixed-point data type.
+    */
+    SFix()
+        : m_intBits(0), m_fracBits(0)
+    {
+    }
 
     /** create a fixed-point data type 
         @param[in] intBits the number of integer bits (may be negative).
@@ -30,13 +36,9 @@ public:
         be greater than zero!
     */
     SFix(int32_t intBits, int32_t fracBits)
-    : m_intBits(intBits), m_fracBits(fracBits)
+        : m_intBits(intBits), m_fracBits(fracBits)
     {
-        int32_t N = intBits + fracBits;
-        if (N > 0)
-        {
-            m_data.resize(1+((N-1)/32));
-        }
+        setSize(intBits, fracBits);
     }
 
     /** return the number of integer bits */
@@ -49,6 +51,17 @@ public:
     int32_t fracBits() const
     {
         return m_fracBits;
+    }
+
+    /** clear/zero data and set size of the type */
+    void setSize(int32_t intBits, int32_t fracBits)
+    {
+        m_data.clear();
+        int32_t N = intBits + fracBits;
+        if (N > 0)
+        {
+            m_data.resize(1+((N-1)/32));
+        }
     }
 
     /** multiplication */
