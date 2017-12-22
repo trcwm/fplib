@@ -149,6 +149,34 @@ SFix SFix::negate() const
     return result;
 }
 
+bool SFix::addPowerOfTwo(int32_t power, bool negative)
+{
+    int32_t lowPower  = m_fracBits;
+    int32_t highPower = m_intBits;
+    if (lowPower > power)
+    {
+        return false; // out of range
+    }
+    if (highPower < power)
+    {
+        return false; // out of range
+    }
+
+    SFix tmp(m_intBits, m_fracBits);
+    uint32_t bitIndex  = (power-m_fracBits) % 32;
+    uint32_t wordIndex = (power-m_fracBits) / 32;
+    tmp.setInternalValue(wordIndex,1<<bitIndex);
+    if (negative)
+    {
+        internal_sub(*this, tmp, *this);
+    }
+    else
+    {
+        internal_add(*this, tmp, *this);
+    }
+    return true;
+}
+
 std::string SFix::toHexString() const
 {
     std::stringstream stream;

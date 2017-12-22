@@ -185,6 +185,16 @@ public:
         return m_data[idx];
     }
 
+    /** add (or subtract) a power of two without affecting
+        the width of the number. This function is needed
+        to support Canonical Signed Digit formats.
+
+        note: range checking is performed. if the power is
+        outside the SFix representation range, the function
+        will return false.
+    */
+    bool addPowerOfTwo(int32_t power, bool negative);
+
 protected:
     /** add two 32-bit words with carry input and produce a result.
         also return a carry value */
