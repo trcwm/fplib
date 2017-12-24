@@ -151,7 +151,7 @@ SFix SFix::negate() const
 
 bool SFix::addPowerOfTwo(int32_t power, bool negative)
 {
-    int32_t lowPower  = m_fracBits;
+    int32_t lowPower  = -m_fracBits;
     int32_t highPower = m_intBits;
     if (lowPower > power)
     {
@@ -163,8 +163,8 @@ bool SFix::addPowerOfTwo(int32_t power, bool negative)
     }
 
     SFix tmp(m_intBits, m_fracBits);
-    uint32_t bitIndex  = (power-m_fracBits) % 32;
-    uint32_t wordIndex = (power-m_fracBits) / 32;
+    uint32_t bitIndex  = (power+m_fracBits) % 32;
+    uint32_t wordIndex = (power+m_fracBits) / 32;
     tmp.setInternalValue(wordIndex,1<<bitIndex);
     if (negative)
     {
@@ -175,6 +175,46 @@ bool SFix::addPowerOfTwo(int32_t power, bool negative)
         internal_add(*this, tmp, *this);
     }
     return true;
+}
+
+void SFix::randomizeValue()
+{
+    const uint32_t N=m_data.size();
+    for(uint32_t i=0; i<N; i++)
+    {
+        // the max returned by rand()
+        // is implementation dependent
+        // but guaranteerd to be greater
+        // than 32767.
+        if (RAND_MAX >= 65536)
+        {
+            m_data[i] = (rand() & 0xFFFF);
+            m_data[i] |= (rand() & 0xFFFF)<<16;
+        }
+        else
+        {
+            m_data[i]  = (uint32_t)(rand() & 0xFF);
+            m_data[i] |= (uint32_t)(rand() & 0xFF) << 8;
+            m_data[i] |= (uint32_t)(rand() & 0xFF) << 16;
+            m_data[i] |= (uint32_t)(rand() & 0xFF) << 24;
+        }
+    }
+
+    // force the upper MSB to conform to the
+    // correct sign
+    uint32_t signBitIndex = (m_fracBits+m_intBits-1) % 32;
+    if (isNegative())
+    {
+        // clear top bits
+        uint32_t mask = (1UL << signBitIndex) - 1;
+        m_data[N-1] &= mask;
+    }
+    else
+    {
+        // set top bits
+        uint32_t mask = (1UL << signBitIndex) - 1;
+        m_data[N-1] |= ~mask;
+    }
 }
 
 std::string SFix::toHexString() const
@@ -436,3 +476,4 @@ void SFix::internal_mul(const SFix &a, const SFix &b, SFix &result)
         internal_increment(result);
     }
 }
+

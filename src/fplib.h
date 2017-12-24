@@ -125,6 +125,34 @@ public:
         return result;
     }
 
+    /** compare two SFix numbers */
+    bool operator ==(const SFix &rhs) const
+    {
+        if ((rhs.m_intBits != m_intBits) ||
+            (rhs.m_fracBits != m_fracBits))
+        {
+            return false;
+        }
+        if (rhs.m_data.size() != m_data.size())
+        {
+            return false;
+        }
+        const uint32_t N=m_data.size();
+        for(uint32_t i=0; i<N; i++)
+        {
+            if (rhs.m_data[i] != m_data[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool operator !=(const SFix &rhs) const
+    {
+        return !(*this == rhs);
+    }
+
     /** negate a number */
     SFix negate() const;
 
@@ -175,11 +203,15 @@ public:
         return result;
     }
 
+    /** set one of the N internal 32-bit values.
+        used for debugging. */
     void setInternalValue(uint32_t idx, uint32_t v)
     {
         m_data[idx] = v;
     }
 
+    /** get one of the N internal 32-bit values.
+        used for debugging. */
     uint32_t getInternalValue(uint32_t idx) const
     {
         return m_data[idx];
@@ -194,6 +226,9 @@ public:
         will return false.
     */
     bool addPowerOfTwo(int32_t power, bool negative);
+
+    /** set to random value - used for fuzzing */
+    void randomizeValue();
 
 protected:
     /** add two 32-bit words with carry input and produce a result.
