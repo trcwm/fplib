@@ -8,7 +8,12 @@
 #include <iostream>
 #include <iomanip>
 #include "fplib.h"
+
+#ifdef WIN32
 #include <intrin.h>
+#else
+#include <adxintrin.h>
+#endif
 
 using namespace fplib;
 
@@ -34,8 +39,13 @@ bool SFix::addUWords(uint32_t a, uint32_t b, bool carry_in, uint32_t &result) co
     return carry_out;
 #endif
 
+#if WIN32
     if (_addcarry_u32(carry_in ? 1:0, a, b, &result) != 0)
         return true;
+#else
+    if (__builtin_ia32_addcarryx_u32(carry_in ? 1:0, a, b, &result) != 0)
+        return true;
+#endif
 
     return false;
 }
