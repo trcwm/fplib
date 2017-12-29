@@ -13,5 +13,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 endif()
 
 target_compile_options(fplib PRIVATE -madx)
+message(STATUS "Travis test..")
 
 add_library(fplib src/fplib.cpp src/fplib.h)
