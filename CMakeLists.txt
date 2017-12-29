@@ -12,4 +12,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   target_compile_options(fplib PRIVATE -madx)
 endif()
 
+target_compile_options(fplib PRIVATE -madx)
+
 add_library(fplib src/fplib.cpp src/fplib.h)
