@@ -148,6 +148,7 @@ public:
         return true;
     }
 
+    /** check if two SFix numbers are not equal */
     bool operator !=(const SFix &rhs) const
     {
         return !(*this == rhs);

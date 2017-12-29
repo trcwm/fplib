@@ -357,31 +357,8 @@ void SFix::internal_sub(const SFix &a, const SFix &b, SFix &result) const
     // sanity check:
     if ((a.m_fracBits != b.m_fracBits) || (a.m_fracBits != result.m_fracBits))
     {
-        // internal error!
+        // FIXME: internal error!
     }
-
-#if 0
-    // Note:
-    //
-    // a - b = a + (~b + 1) using 2's complement
-    // so by inverting B and setting the carry,
-    // we can use addUWords to subtract!
-    //
-
-    uint32_t N = std::min(a.m_data.size(), b.m_data.size());
-    bool carry = true;
-    for(uint32_t i=0; i<N; i++)
-    {
-        carry = addUWords(a.m_data[i], ~b.m_data[i], carry, result.m_data[i]);
-    }
-
-    //TODO: carry propagation!
-
-    if ((carry) && (N < result.m_data.size()))
-    {
-        result.m_data[N]++;
-    }
-#endif
 
     SFix tmp = b.negate();
     internal_add(a,tmp,result);
@@ -438,42 +415,25 @@ void SFix::internal_umul(const SFix &a, const SFix &b, bool invA, bool invB, SFi
 
 void SFix::internal_mul(const SFix &a, const SFix &b, SFix &result)
 {
-    bool Ainv = a.isNegative();
-    bool Binv = b.isNegative();
+    bool finalNegate = false;
+    SFix op1 = a;
+    SFix op2 = b;
 
-    internal_umul(a,b,Ainv,Binv,result);
-    if (Ainv && Binv)
+    if (op1.isNegative())
     {
-        // ~[(~a+1)*(~b+1)]+1 = ~[~a*~b + ~b + ~a + 1]+1
-        // ~[~a*~b] + ~b + ~a - 1
-#if 0
-        internal_invert(result);
-        internal_add(a, false, result);
-        internal_add(b, false, result);
-        // TODO: decrement by one
-#else
-        internal_add(a, true, result);
-        internal_add(b, true, result);
-        internal_increment(result);
-        internal_invert(result);
-        internal_increment(result);
-#endif
+        op1 = op1.negate();
+        finalNegate = !finalNegate;
     }
-    else if (Ainv && (!Binv))
+    if (op2.isNegative())
     {
-        // ~[b * (~a + 1)] + 1 = ~[~a*b + b] + 1
-        //                     = ~[~a*b] + ~b + 1
-        internal_invert(result);
-        internal_add(b, true, result);
-        internal_increment(result);
+        op2 = op2.negate();
+        finalNegate = !finalNegate;
     }
-    else if ((!Ainv) && Binv)
+
+    internal_umul(op1,op2,false,false,result);
+    if (finalNegate)
     {
-        // ~[a * (~b + 1)] + 1 = ~[a*~b + a] + 1
-        //                     = ~[a*~b] + ~a + 1
-        internal_invert(result);
-        internal_add(a, true, result);
-        internal_increment(result);
+        result = result.negate();
     }
 }
 
