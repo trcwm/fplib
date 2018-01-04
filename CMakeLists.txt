@@ -16,6 +16,4 @@ if (CMAKE_CXX_COMPILER MATCHES ".*clang")
   set(CMAKE_CXX_FLAGS "-madx")
 endif()
 
-message(STATUS "Travis test..")
-
 add_library(fplib src/fplib.cpp src/fplib.h)
