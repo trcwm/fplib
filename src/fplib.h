@@ -178,13 +178,7 @@ public:
     /** check the sign bit */
     bool isNegative() const
     {
-        uint32_t bit = ((m_intBits + m_fracBits - 1) % 32);
-        uint32_t idx = ((m_intBits + m_fracBits - 1) / 32);
-        if ((m_data[idx] >> bit) & 0x01)
-        {
-            return true;
-        }
-        return false;
+        return getBitValue(m_intBits + m_fracBits - 1);
     }
 
     /** change the Q(intBits,fracBits) qualifier to cheaply
@@ -199,7 +193,8 @@ public:
         }
         else
         {
-            //TODO: handle error.
+            //TODO: handle error when input and output
+            //      are not of the same length
         }
         return result;
     }
@@ -230,6 +225,34 @@ public:
 
     /** set to random value - used for fuzzing */
     void randomizeValue();
+
+    /** get the number of integer bits necessary to represent the
+        current value. This assumes the fractional bits all necessary.
+        note: this function is primarily used to determine precision
+              required for the min/max values a fixed-point variable
+              can attain.
+
+        method: move towards the LSB as long as the current bit
+                equals the sign bit.
+    */
+    int32_t determineMinimumIntegerBits() const
+    {
+        int32_t requiredIntBits = m_intBits;
+        uint32_t bitIndex = m_intBits + m_fracBits - 1; // sign bit
+        bool msb = getBitValue(bitIndex);
+        if (bitIndex == 0)
+        {
+            return requiredIntBits;
+        }
+        bitIndex--;
+
+        while((msb == getBitValue(bitIndex)) && (bitIndex != 0))
+        {
+            requiredIntBits--;
+            bitIndex--;
+        }
+        return requiredIntBits;
+    }
 
 protected:
     /** add two 32-bit words with carry input and produce a result.
@@ -263,10 +286,23 @@ protected:
     /** invert bits */
     void internal_invert(SFix &result) const;
 
-    int32_t m_intBits;    // number of integer bits
-    int32_t m_fracBits;   // number of fractional bits
+    /** get the value of a bit in the internal representation,
+        given it's offset w.r.t. the LSB. */
+    bool getBitValue(uint32_t offset) const
+    {
+        uint32_t bit = (offset % 32);
+        uint32_t idx = (offset / 32);
+        if ((m_data[idx] >> bit) & 0x01)
+        {
+            return true;
+        }
+        return false;
+    }
 
-    std::vector<uint32_t>   m_data;
+    int32_t m_intBits;      ///< number of integer bits
+    int32_t m_fracBits;     ///< number of fractional bits
+
+    std::vector<uint32_t>   m_data; ///< fixed-point value represented by 16-bit words.
 };
 
 } // end namespace
