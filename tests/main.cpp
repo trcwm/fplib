@@ -36,6 +36,18 @@ void displayNumber(const SFix &num)
         printf("0.");
     }
 
+    // strip MSB / remove fractional part
+    a = a.removeMSBs(a.intBits());
+
+    // log2(10) = 3.32 bits
+    // so each digit consumes 3.32 bits
+    // we keep a running total and stop
+    // producing digits when we run out of
+    // preicision
+    //
+
+    int32_t org_fbits = a.fracBits();
+    int32_t cnv_fbits = 0; // number of converted fractional bits
     while(a.fracBits() > 0)
     {
         SFix x8 = a.reinterpret(a.intBits()+3, a.fracBits()-3);    // mul by 8
@@ -50,6 +62,12 @@ void displayNumber(const SFix &num)
         else
         {
             printf("X");
+        }
+
+        cnv_fbits += 3;
+        if (cnv_fbits > org_fbits)
+        {
+            break;
         }
     }
     printf("\n");
@@ -174,23 +192,23 @@ bool testMul()
 
     SFix r2 = a*b;
     SFix r3 = r2.negate();
-    if (r3.toHexString() != "3fffffffffffffff0000000000000002")
+    if (r3.toHexString() != "3fffffffffffffff0000000000000001")
     {
         std::string s = r3.toHexString();
         printf("a negative, b positive\n");
         printf("Error: got    %s\n", s.c_str());
-        printf("       wanted 3fffffffffffffff0000000000000002\n");
+        printf("       wanted 3fffffffffffffff0000000000000001\n");
         return false;
     }
 
     SFix r4 = b*a;
     SFix r5 = r4.negate();
-    if (r5.toHexString() != "3fffffffffffffff0000000000000002")
+    if (r5.toHexString() != "3fffffffffffffff0000000000000001")
     {
         std::string s = r5.toHexString();
         printf("a negative, b positive - reversed\n");
         printf("Error: got    %s\n", s.c_str());
-        printf("       wanted 3fffffffffffffff0000000000000002\n");
+        printf("       wanted 3fffffffffffffff0000000000000001\n");
         return false;
     }
 
@@ -198,20 +216,21 @@ bool testMul()
     //   test max two negative arguments
     // ************************************************************
 
-    // set a to largest negative number
+    // set a to large negative number
     a.setInternalValue(0,0x00000001);
     a.setInternalValue(1,0x80000000);
 
-    // set b to largest positive number
+    // set b to large negative number
     b.setInternalValue(0,0x00000001);
     b.setInternalValue(1,0x80000000);
 
     SFix r6 = a*b;
-    if (r6.toHexString() != "c000000000000000ffffffffffffffff")
+    if (r6.toHexString() != "3fffffffffffffff0000000000000001")
     {
         std::string s = r6.toHexString();
+        printf("a negative, b negative\n");
         printf("Error: got %s\n", s.c_str());
-        printf("       wanted c000000000000000ffffffffffffffff\n");
+        printf("       wanted 3fffffffffffffff0000000000000001\n");
 
         return false;
     }    
@@ -302,6 +321,43 @@ bool testSubtract()
         printf("Error: got    %s\n", s.c_str());
         printf("       wanted fffffffe1ffffffe\n");
 
+        return false;
+    }
+
+    return true;
+}
+
+bool checkMinimumIntegerBits()
+{
+    SFix a(32,0);   // 32-bit integer
+    a.setInternalValue(0,0x7FFFFFFF);
+
+    int32_t bits = a.determineMinimumIntegerBits();
+    if (bits != 32)
+    {
+        printf("test 1\n");
+        printf("Error: got %d!\n", bits);
+        printf("       wanted 32\n");
+        return false;
+    }
+
+    a.setInternalValue(0,0);
+    bits = a.determineMinimumIntegerBits();
+    if (bits != 2)
+    {
+        printf("test 2\n");
+        printf("Error: got %d!\n", bits);
+        printf("       wanted 2\n");
+        return false;
+    }
+
+    a.setInternalValue(0,0xFFFFFFFF);
+    bits = a.determineMinimumIntegerBits();
+    if (bits != 2)
+    {
+        printf("test 3\n");
+        printf("Error: got %d!\n", bits);
+        printf("       wanted 2\n");
         return false;
     }
 
@@ -443,10 +499,13 @@ void bisectionSqrt()
     printf("\n");
     printf("------------------------------------------------\n");
     printf(" Square root calculation using bisection method\n");
-    printf("------------------------------------------------\n");
-    printf("Sqrt(%d):\n", rootOf);
-    printf("l -> %s / 2^%d\n", s1.c_str(), fbits);
-    printf("r -> %s / 2^%d\n", s2.c_str(), fbits);
+    printf("------------------------------------------------\n\n");
+    //printf("Sqrt(%d):\n", rootOf);
+    //printf("l -> %s / 2^%d\n", s1.c_str(), fbits);
+    //printf("r -> %s / 2^%d\n", s2.c_str(), fbits);
+
+    printf("Sqrt(2) is approximately 1.");
+    displayNumber(l);
 }
 
 int main()
@@ -519,6 +578,15 @@ int main()
     else
     {
         printf("powerCheck test failed\n");
+    }
+
+    if (checkMinimumIntegerBits())
+    {
+        printf("checkMinimumIntegerBits test passed\n");
+    }
+    else
+    {
+        printf("checkMinimumIntegerBits test failed\n");
     }
 
     oneDivXTest();

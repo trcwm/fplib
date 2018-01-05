@@ -302,7 +302,7 @@ protected:
     int32_t m_intBits;      ///< number of integer bits
     int32_t m_fracBits;     ///< number of fractional bits
 
-    std::vector<uint32_t>   m_data; ///< fixed-point value represented by 16-bit words.
+    std::vector<uint32_t>   m_data; ///< fixed-point value represented by 32-bit words.
 };
 
 } // end namespace
