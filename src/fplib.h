@@ -185,12 +185,17 @@ public:
     /** Check the sign bit */
     bool isNegative() const
     {
+        if ((m_intBits == 0) && (m_fracBits == 0))
+        {
+            // handle uninitialized case!
+            return false;
+        }
         return getBitValue(m_intBits + m_fracBits - 1);
     }
 
     /** Change the Q(intBits,fracBits) qualifier to cheaply
         shift the factional point */
-    SFix reinterpret(uint32_t intBits, uint32_t fracBits)
+    SFix reinterpret(int32_t intBits, int32_t fracBits)
     {
         SFix result(intBits, fracBits);
         int32_t N = intBits + fracBits;
