@@ -33,7 +33,7 @@ public:
         @param[in] fracBits the number of fractional bits (may be negative).
 
         Note: the total number of bits used is intBits + fracBits and must
-        be greater than zero!
+        be greater than zero! No checking is performed by the library.
     */
     SFix(int32_t intBits, int32_t fracBits)
         : m_intBits(intBits), m_fracBits(fracBits)
@@ -53,7 +53,14 @@ public:
         return m_fracBits;
     }
 
-    /** clear/zero data and set size of the type */
+
+    /** Clear/zero data and set size of the type
+        @param[in] intBits the number of integer bits (may be negative).
+        @param[in] fracBits the number of fractional bits (may be negative).
+
+        Note: the total number of bits used is intBits + fracBits and must
+        be greater than zero! No checking is performed by the library.
+    */
     void setSize(int32_t intBits, int32_t fracBits)
     {
         m_data.clear();
@@ -64,7 +71,7 @@ public:
         }
     }
 
-    /** multiplication */
+    /** Multiplication: Q(n1,m1) * Q(n2,m2) -> Q(n1+n2-1, m1+m2) */
     SFix operator*(const SFix& rhs)
     {
         SFix tmp(m_intBits+rhs.m_intBits-1, m_fracBits+rhs.m_fracBits);
@@ -72,7 +79,7 @@ public:
         return tmp;
     }
 
-    /** addition */
+    /** Addition: Q(n1,m1) + Q(n2,m2) -> Q( max(n1,n2)+1, max(m1,m2) ) */
     SFix operator+(const SFix& rhs)
     {
         uint32_t intBits  = std::max(m_intBits, rhs.intBits())+1;
@@ -99,7 +106,7 @@ public:
         return result;
     }
 
-    /** subtraction */
+    /** Subtraction: Q(n1,m1) - Q(n2,m2) -> Q( max(n1,n2)+1, max(m1,m2) ) */
     SFix operator-(const SFix& rhs)
     {
         uint32_t intBits  = std::max(m_intBits, rhs.intBits())+1;
@@ -154,34 +161,34 @@ public:
         return !(*this == rhs);
     }
 
-    /** negate a number */
+    /** Return the negated number */
     SFix negate() const;
 
-    /** extend LSBs / fractional bits */
+    /** Extend LSBs / fractional bits */
     SFix extendLSBs(uint32_t bits) const;
 
-    /** extend MSBs / integer bits */
-    SFix extendMSBs(uint32_t bits);
+    /** Extend MSBs / integer bits */
+    SFix extendMSBs(uint32_t bits) const;
 
-    /** remove LSBs / fractional bits */
-    SFix removeLSBs(uint32_t bits);
+    /** Remove LSBs / fractional bits */
+    SFix removeLSBs(uint32_t bits) const;
 
-    /** remove MSBs / integer bits */
-    SFix removeMSBs(uint32_t bits);
+    /** Remove MSBs / integer bits */
+    SFix removeMSBs(uint32_t bits) const;
 
     /** convert the fixed point number to a hex string */
     std::string toHexString() const;
 
-    /** set the value */
+    /** Set the value of the fixed-point number using a hexadecimal string */
     void fromHexString(const std::string &hex);
 
-    /** check the sign bit */
+    /** Check the sign bit */
     bool isNegative() const
     {
         return getBitValue(m_intBits + m_fracBits - 1);
     }
 
-    /** change the Q(intBits,fracBits) qualifier to cheaply
+    /** Change the Q(intBits,fracBits) qualifier to cheaply
         shift the factional point */
     SFix reinterpret(uint32_t intBits, uint32_t fracBits)
     {
@@ -213,8 +220,8 @@ public:
         return m_data[idx];
     }
 
-    /** add (or subtract) a power of two without affecting
-        the width of the number. This function is needed
+    /** Add (or subtract) a power of two without affecting
+        the precision of the number. This function is needed
         to support Canonical Signed Digit formats.
 
         note: range checking is performed. if the power is
@@ -226,7 +233,7 @@ public:
     /** set to random value - used for fuzzing */
     void randomizeValue();
 
-    /** get the number of integer bits necessary to represent the
+    /** Return the number of integer bits necessary to represent the
         current value. This assumes the fractional bits all necessary.
         note: this function is primarily used to determine precision
               required for the min/max values a fixed-point variable

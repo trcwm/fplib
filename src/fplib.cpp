@@ -50,7 +50,7 @@ bool SFix::addUWords(uint32_t a, uint32_t b, bool carry_in, uint32_t &result) co
     return false;
 }
 
-/** extend LSBs / fractional bits */
+
 SFix SFix::extendLSBs(uint32_t bits) const
 {
     SFix result(m_intBits, m_fracBits+bits);
@@ -74,8 +74,8 @@ SFix SFix::extendLSBs(uint32_t bits) const
     return result;
 }
 
-/** extend MSBs / integer bits */
-SFix SFix::extendMSBs(uint32_t bits)
+
+SFix SFix::extendMSBs(uint32_t bits) const
 {
     SFix result(m_intBits+bits, m_fracBits);
     uint32_t N=result.m_data.size();
@@ -103,8 +103,8 @@ SFix SFix::extendMSBs(uint32_t bits)
     return result;
 }
 
-/** remove LSBs / fractional bits */
-SFix SFix::removeLSBs(uint32_t bits)
+
+SFix SFix::removeLSBs(uint32_t bits) const
 {
     SFix result(m_intBits, m_fracBits-bits);
 
@@ -126,8 +126,8 @@ SFix SFix::removeLSBs(uint32_t bits)
     return result;
 }
 
-/** remove MSBs / integer bits */
-SFix SFix::removeMSBs(uint32_t bits)
+
+SFix SFix::removeMSBs(uint32_t bits) const
 {
     SFix result(m_intBits-bits, m_fracBits);
 
@@ -146,6 +146,7 @@ SFix SFix::removeMSBs(uint32_t bits)
     return result;
 }
 
+
 SFix SFix::negate() const
 {
     SFix result(m_intBits, m_fracBits);
@@ -158,6 +159,7 @@ SFix SFix::negate() const
     internal_increment(result);
     return result;
 }
+
 
 bool SFix::addPowerOfTwo(int32_t power, bool negative)
 {
@@ -186,6 +188,7 @@ bool SFix::addPowerOfTwo(int32_t power, bool negative)
     }
     return true;
 }
+
 
 void SFix::randomizeValue()
 {
@@ -227,6 +230,7 @@ void SFix::randomizeValue()
     }
 }
 
+
 std::string SFix::toHexString() const
 {
     std::stringstream stream;
@@ -241,12 +245,15 @@ std::string SFix::toHexString() const
     return stream.str();
 }
 
+
 void SFix::internal_add(const SFix &a, const SFix &b, SFix &result) const
 {
     // sanity check:
     if ((a.m_fracBits != b.m_fracBits) || (a.m_fracBits != result.m_fracBits))
     {
-        // internal error!
+        std::stringstream ss;
+        ss << "SFix::internal_add fractional bits not equalized!";
+        throw std::runtime_error(ss.str());
     }
 
     uint32_t N  = std::min(a.m_data.size(), b.m_data.size());   // #words in smallest operand
@@ -294,12 +301,15 @@ void SFix::internal_add(const SFix &a, const SFix &b, SFix &result) const
     }
 }
 
+
 void SFix::internal_add(const SFix &a, bool invA, SFix &result)
 {
     // sanity check:
     if (a.m_fracBits != result.m_fracBits)
     {
-        // internal error!
+        std::stringstream ss;
+        ss << "SFix::internal_add fractional bits not equalized!";
+        throw std::runtime_error(ss.str());
     }
 
     // add 32-bit words together until we run out of bits
@@ -331,15 +341,8 @@ void SFix::internal_add(const SFix &a, bool invA, SFix &result)
             idx++;
         }
     }
-
-#if 0
-    //TODO: carry propagation!
-    if ((carry) && (N < result.m_data.size()))
-    {
-        result.m_data[N]++;
-    }
-#endif
 }
+
 
 void SFix::internal_invert(SFix &result) const
 {
@@ -349,6 +352,7 @@ void SFix::internal_invert(SFix &result) const
         result.m_data[i] = ~result.m_data[i];
     }
 }
+
 
 void SFix::internal_increment(SFix &result) const
 {
@@ -362,17 +366,21 @@ void SFix::internal_increment(SFix &result) const
     }
 }
 
+
 void SFix::internal_sub(const SFix &a, const SFix &b, SFix &result) const
 {
     // sanity check:
     if ((a.m_fracBits != b.m_fracBits) || (a.m_fracBits != result.m_fracBits))
     {
-        // FIXME: internal error!
+        std::stringstream ss;
+        ss << "SFix::internal_sub fractional bits not equalized!";
+        throw std::runtime_error(ss.str());
     }
 
     SFix tmp = b.negate();
     internal_add(a,tmp,result);
 }
+
 
 void SFix::internal_umul(const SFix &a, const SFix &b, bool invA, bool invB, SFix &result)
 {
