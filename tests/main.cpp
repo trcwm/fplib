@@ -77,6 +77,7 @@ bool testExtend()
 {
     SFix a(1,31);
 
+    // extend a 32-bit aligned negative word
     a.setInternalValue(0,0x8A5A5A5A);
     SFix r = a.extendMSBs(11);
     if (r.toHexString() != "ffffffff8a5a5a5a")
@@ -90,7 +91,7 @@ bool testExtend()
 
     SFix b(1,32);
     b.setInternalValue(0,0x5A5A5A5A);
-    b.setInternalValue(1,0x00000001);
+    b.setInternalValue(1,0xFFFFFFFF);
     SFix r2 = b.extendMSBs(31);
     if (r2.toHexString() != "ffffffff5a5a5a5a")
     {
@@ -121,6 +122,18 @@ bool testExtend()
         printf("Error: got    %s\n", s.c_str());
         printf("       wanted 00000001c0000000000000000000000000000000\n");
         return false;
+    }
+
+    // sign-extend test a small negative number
+    c.setInternalValue(0,0xFFFFFF82);
+    SFix r5 = c.extendMSBs(11);
+    if (r5.toHexString() != "ffffff82")
+    {
+        printf("test 5\n");
+        std::string s = r5.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted ffffff82\n");
+        return false;        
     }
 
     return true;

@@ -16,4 +16,14 @@ if (CMAKE_CXX_COMPILER MATCHES ".*clang")
   set(CMAKE_CXX_FLAGS "-madx")
 endif()
 
-add_library(fplib src/fplib.cpp src/fplib.h)
+# enable exception unwinding semantics for
+# Visual Studio
+if (CMAKE_CXX_COMPILER MATCHES ".*Microsoft")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc") 
+endif()
+
+message("Using: ${CMAKE_CXX_COMPILER}")
+
+add_library(fplib src/fplib.cpp src/fplib.h src/fpreference.cpp src/fpreference.h)
+add_executable(fplib_tests tests/main.cpp tests/reftest.cpp)
+target_link_libraries(fplib_tests fplib)
