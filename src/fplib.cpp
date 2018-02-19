@@ -80,6 +80,9 @@ SFix SFix::extendMSBs(uint32_t bits) const
     SFix result(m_intBits+bits, m_fracBits);
     uint32_t N=result.m_data.size();
 
+    // pre-fill the result with all bits set
+    // if the number is negative so we
+    // don't have to handle sign-extension later
     if (isNegative())
     {
         for(uint32_t i=0; i<N; i++)
@@ -88,6 +91,8 @@ SFix SFix::extendMSBs(uint32_t bits) const
         }
     }
 
+    // directly copy 32-bit chunks from the source
+    // until we run out..
     int32_t obits = m_intBits+m_fracBits;
     uint32_t idx = 0;
     while(obits >= 32)
@@ -96,8 +101,14 @@ SFix SFix::extendMSBs(uint32_t bits) const
         idx++;
         obits -= 32;
     }
+
+    // patch the remaining (upper) bits of the
+    // source number into the result.
     if (obits > 0)
     {
+        // zero the relevant bits so we can later OR
+        // the remaining upper bits into the word.
+        result.m_data[idx] &= (0xFFFFFFFFUL << obits);
         result.m_data[idx] |= m_data[idx] & (0xFFFFFFFFUL >> (32-obits));
     }
     return result;

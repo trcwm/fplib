@@ -174,10 +174,12 @@ public:
         {
             return false;
         }
+
         if (rhs.m_data.size() != m_data.size())
         {
             return false;
         }
+
         const uint32_t N=m_data.size();
         for(uint32_t i=0; i<N; i++)
         {
