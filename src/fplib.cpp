@@ -148,12 +148,12 @@ SFix SFix::removeMSBs(uint32_t bits) const
         result.m_data[i] = m_data[i];
     }
 
-    if (result.isNegative())
+    if (isNegative())
     {
         // Make sure we set all the sign bits within the
         // top-most 32-bit word.
         uint32_t topBits = N*32 - (m_intBits-bits + m_fracBits);
-        result.m_data[N-1] &= (0xFFFFFFFFUL << topBits);
+        result.m_data[N-1] |= (0xFFFFFFFFUL << (31-topBits));
     }
     return result;
 }

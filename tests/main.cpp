@@ -157,14 +157,26 @@ bool testRemove()
     SFix b(7,21);
     b.setInternalValue(0, 0x003c0802);
     SFix r2 = b.removeLSBs(13);
-    if (r2.toHexString() != "00000007")
+    if (r2.toHexString() != "000001e0")
     {
         printf("test 2\n");
         std::string s = r2.toHexString();
         printf("Error: got    %s\n", s.c_str());
-        printf("       wanted 00000007\n");
+        printf("       wanted 000001e0\n");
         return false;
     }    
+
+    SFix c(1,8);
+    c.setInternalValue(0,0xFFFFFF03);
+    SFix r3 = c.removeMSBs(2);
+    if (r3.toHexString() != "ffffffc3")
+    {
+        printf("test 3\n");
+        std::string s = r3.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted ffffffc3\n");
+        return false;
+    }
 
     return true;
 }
