@@ -178,6 +178,20 @@ bool testRemove()
         return false;
     }
 
+    // test truncate Q(7,21) -> Q(1,8)
+    SFix d(7,21);
+    d.setInternalValue(0, 0x003c0802);
+    SFix r4 = d.removeMSBs(6);
+    r4 = r4.removeLSBs(13);
+    if (r4.toHexString() != "000000e0")
+    {
+        printf("test 4\n");
+        std::string s = r4.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 000000e0\n");
+        return false;
+    }
+
     return true;
 }
 
