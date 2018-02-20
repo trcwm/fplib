@@ -265,6 +265,37 @@ std::string SFix::toHexString() const
 }
 
 
+std::string SFix::toBinString() const
+{
+    std::string v;
+    //const uint32_t N=m_data.size();         // number of 32-bit words
+
+    int32_t bits = m_intBits + m_fracBits;  // total number of bits
+    uint32_t idx = 0;                       // index of current 32-bit word
+    uint32_t wbitsLeft = 32;                // number of bits left in word to serialize
+    uint32_t wbits = m_data[idx++];         // current 32-bit word
+    while(bits > 0)
+    {
+        if (wbits == 0)
+        {
+            wbits = m_data[idx++];
+            wbitsLeft = 32;
+        }
+        if (wbits & 1)
+        {
+            v = "1" + v;
+        }
+        else
+        {
+            v = "0" + v;
+        }
+        wbits >>= 1;
+        wbitsLeft--;
+        bits--;
+    }
+    return v;
+}
+
 void SFix::internal_add(const SFix &a, const SFix &b, SFix &result) const
 {
     // sanity check:

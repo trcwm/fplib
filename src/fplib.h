@@ -212,7 +212,12 @@ public:
     /** Remove MSBs / integer bits */
     SFix removeMSBs(uint32_t bits) const;
 
-    /** convert the fixed point number to a hex string */
+    /** convert the fixed point number to a binary string */
+    std::string toBinString() const;
+
+    /** convert the fixed point number to a hex string.
+        returns hex digits in 32-bit chunks.
+    */
     std::string toHexString() const;
 
     /** Set the value of the fixed-point number using a hexadecimal string */
