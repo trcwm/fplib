@@ -119,7 +119,7 @@ SFix SFix::removeLSBs(uint32_t bits) const
 {
     SFix result(m_intBits, m_fracBits-bits);
 
-    uint32_t idx = bits / 32;
+    uint32_t idx = bits / 32;   // index of first word to copy
     const uint32_t shift = bits % 32;
 
     uint32_t N=result.m_data.size();
