@@ -148,12 +148,13 @@ SFix SFix::removeMSBs(uint32_t bits) const
         result.m_data[i] = m_data[i];
     }
 
-    // note: we don't mask off the
-    // top MSB bits that re still left
-    // from the original data type
-    // these are ignored because
-    // Q(intBits,fracBits) is still correct.
-
+    if (result.isNegative())
+    {
+        // Make sure we set all the sign bits within the
+        // top-most 32-bit word.
+        uint32_t topBits = N*32 - (m_intBits-bits + m_fracBits);
+        result.m_data[N-1] &= (0xFFFFFFFFUL << topBits);
+    }
     return result;
 }
 
