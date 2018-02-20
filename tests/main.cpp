@@ -153,6 +153,19 @@ bool testRemove()
         printf("       wanted 00fe007f\n");
         return false;
     }
+
+    SFix b(7,21);
+    b.setInternalValue(0, 0x003c0802);
+    SFix r2 = b.removeLSBs(13);
+    if (r2.toHexString() != "00000007")
+    {
+        printf("test 2\n");
+        std::string s = r2.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 00000007\n");
+        return false;
+    }    
+
     return true;
 }
 
@@ -336,6 +349,21 @@ bool testSubtract()
 
         return false;
     }
+
+    // 
+    SFix e(0,18);
+    SFix f(0,18);
+    e.setInternalValue(0, 0xfffee97b);
+    f.setInternalValue(0, 0xfffd1948);
+    SFix r3 = e-f;
+    if (r3.toHexString() != "0001d033")
+    {
+        std::string s = r3.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 0001d033\n");
+
+        return false;
+    }    
 
     return true;
 }
