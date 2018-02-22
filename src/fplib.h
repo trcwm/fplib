@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <algorithm>
 #include <vector>
+#include <assert.h>
 
 namespace fplib
 {
@@ -110,6 +111,9 @@ public:
     {
         SFix tmp(m_intBits+rhs.m_intBits-1, m_fracBits+rhs.m_fracBits);
         internal_mul(*this, rhs, tmp);
+
+        assert(tmp.isOk());
+
         return tmp;
     }
 
@@ -137,6 +141,8 @@ public:
             internal_add(*this, rhs, result);
         }
 
+        assert(result.isOk());
+
         return result;
     }
 
@@ -162,6 +168,8 @@ public:
         {
             internal_sub(*this, rhs, result);
         }
+
+        assert(result.isOk());
 
         return result;
     }
@@ -307,6 +315,14 @@ public:
         return requiredIntBits;
     }
 
+    /** check the integrity of the sign bits */
+    bool inline isOk() const
+    {
+        uint32_t wordIdx = (m_intBits + m_fracBits - 1) / 32;
+        uint32_t signBitIndex = (m_intBits + m_fracBits - 1) % 32;
+        return hasEqualSignBits(signBitIndex, m_data[wordIdx]);
+    }
+
 protected:
     /** add two 32-bit words with carry input and produce a result.
         also return a carry value */
@@ -350,6 +366,25 @@ protected:
             return true;
         }
         return false;
+    }
+
+    /** generate a bit mask that spans all the
+        sign bits in a 32-bit word. For example,
+        signBitIndex = 3: 0b1111_1111_1111_1111_1111_1111_1111_0000
+    */
+    uint32_t inline genSignMask(uint8_t signBitIndex) const
+    {
+        return 0xFFFFFFFFUL << signBitIndex;
+    }
+
+    /** check if all the sign bits are equal in value
+        i.e. no overflow occurred
+    */
+    bool inline hasEqualSignBits(uint8_t signBitIndex, uint32_t word) const
+    {
+        uint32_t mask  = genSignMask(signBitIndex);
+        uint32_t sbits = word & mask;
+        return ((sbits == 0) || (sbits == mask));
     }
 
     int32_t m_intBits;      ///< number of integer bits

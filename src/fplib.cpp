@@ -276,7 +276,7 @@ std::string SFix::toBinString() const
     uint32_t wbits = m_data[idx++];         // current 32-bit word
     while(bits > 0)
     {
-        if (wbits == 0)
+        if (wbitsLeft == 0)
         {
             wbits = m_data[idx++];
             wbitsLeft = 32;
