@@ -27,6 +27,11 @@ public:
     SFix()
         : m_intBits(0), m_fracBits(0)
     {
+        // make sure there is at least 1
+        // 32-bit word to work with to
+        // avoid out-of-bound memory
+        // accesses.
+        m_data.resize(1);
     }
 
     /** create a fixed-point data type 

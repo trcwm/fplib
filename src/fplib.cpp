@@ -303,7 +303,7 @@ void SFix::internal_add(const SFix &a, const SFix &b, SFix &result) const
     {
         std::stringstream ss;
         ss << "SFix::internal_add fractional bits not equalized!";
-        throw std::runtime_error(ss.str());
+        //throw std::runtime_error(ss.str());
     }
 
     uint32_t N  = std::min(a.m_data.size(), b.m_data.size());   // #words in smallest operand
