@@ -348,6 +348,13 @@ void SFix::internal_add(const SFix &a, const SFix &b, SFix &result) const
     if ((carry) && (idx < result.m_data.size()))
     {
         result.m_data[N]++;
+
+        // check sign bit and extend if necessary
+        if (result.isNegative())
+        {
+            uint32_t topBits  = (m_intBits + m_fracBits - 1)/32;
+            result.m_data[N] |= (0xFFFFFFFFUL << topBits);
+        }
     }
 }
 

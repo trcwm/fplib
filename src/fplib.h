@@ -83,13 +83,7 @@ public:
     */
     void copyValueFrom(const SFix& v)
     {
-        // make sure the precision specifiers are
-        // the same
-        if ((v.fracBits() != m_fracBits) || (v.intBits() != m_intBits))
-        {
-            throw std::runtime_error("SFix::copyValue error: precision does not match!\n");
-        }
-        m_data = v.m_data;
+        copyValueFrom(&v);
     }
 
     /** copy the internal value from another SFix.
@@ -118,15 +112,14 @@ public:
         internal_mul(*this, rhs, tmp);
 
         assert(tmp.isOk());
-
         return tmp;
     }
 
     /** Addition: Q(n1,m1) + Q(n2,m2) -> Q( max(n1,n2)+1, max(m1,m2) ) */
     SFix operator+(const SFix& rhs)
     {
-        uint32_t intBits  = std::max(m_intBits, rhs.intBits())+1;
-        uint32_t fracBits = std::max(m_fracBits, rhs.fracBits());
+        int32_t intBits  = std::max(m_intBits, rhs.intBits())+1;
+        int32_t fracBits = std::max(m_fracBits, rhs.fracBits());
 
         SFix result(intBits, fracBits);
 
@@ -154,8 +147,8 @@ public:
     /** Subtraction: Q(n1,m1) - Q(n2,m2) -> Q( max(n1,n2)+1, max(m1,m2) ) */
     SFix operator-(const SFix& rhs)
     {
-        uint32_t intBits  = std::max(m_intBits, rhs.intBits())+1;
-        uint32_t fracBits = std::max(m_fracBits, rhs.fracBits());
+        int32_t intBits  = std::max(m_intBits, rhs.intBits())+1;
+        int32_t fracBits = std::max(m_fracBits, rhs.fracBits());
         SFix result(intBits, fracBits);
 
         // equalise the LSBs

@@ -323,12 +323,12 @@ bool testAdd()
     b.setInternalValue(1, 0xFFFFFFFF);
 
     SFix r2 = a+b;
-    if (r2.toHexString() != "00000001fffffffffffffffe")
+    if (r2.toHexString() != "fffffffffffffffffffffffe")
     {
         printf("test 2\n");
         std::string s = r2.toHexString();
         printf("Error: got %s\n", s.c_str());
-        printf("       wanted 00000001fffffffffffffffe\n");
+        printf("       wanted fffffffffffffffffffffffe\n");
 
         return false;
     }
