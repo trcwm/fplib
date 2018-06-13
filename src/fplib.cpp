@@ -104,6 +104,8 @@ SFix SFix::extendMSBs(uint32_t bits) const
 
     // patch the remaining (upper) bits of the
     // source number into the result.
+    // FIXME: this does not work for large extensions
+    // e.g. Q(2,3) -> Q(129,3)
     if (obits > 0)
     {
         // zero the relevant bits so we can later OR
@@ -128,9 +130,25 @@ SFix SFix::removeLSBs(uint32_t bits) const
     {
         result.m_data[i] = m_data[idx] >> shift;
         idx++;
-        if ((shift != 0) && (idx < N2))
-        {            
-            result.m_data[i] |= (m_data[idx] << (32-shift));
+        if (idx < N2)
+        {
+            //FIXME: why is this check needed?
+            if (shift != 0)
+            {
+                result.m_data[i] |= (m_data[idx] << (32-shift));
+            }
+        }
+        else
+        {
+            //FIXME: why is this check needed?
+            if (shift != 0)
+            {
+                // push in sign bits at the top.
+                if (isNegative())
+                {
+                    result.m_data[i] |= (0xFFFFFFFF << (32-shift));
+                }
+            }
         }
     }
 

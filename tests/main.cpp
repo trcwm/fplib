@@ -29,7 +29,6 @@ void displayNumber(const SFix &num)
             b = a.extendLSBs(-a.fracBits());
         }
         // print integer part
-
     }
     else
     {
@@ -46,8 +45,7 @@ void displayNumber(const SFix &num)
     // preicision
     //
 
-    int32_t org_fbits = a.fracBits();
-    int32_t cnv_fbits = 0; // number of converted fractional bits
+    int32_t precision3x = a.fracBits()*3;
     while(a.fracBits() > 0)
     {
         SFix x8 = a.reinterpret(a.intBits()+3, a.fracBits()-3);    // mul by 8
@@ -64,8 +62,8 @@ void displayNumber(const SFix &num)
             printf("X");
         }
 
-        cnv_fbits += 3;
-        if (cnv_fbits > org_fbits)
+        precision3x -= 10;
+        if (precision3x < 0)
         {
             break;
         }
@@ -134,6 +132,31 @@ bool testExtend()
         printf("Error: got    %s\n", s.c_str());
         printf("       wanted ffffff82\n");
         return false;        
+    }
+
+    // test extension from small -> very large
+    // for proper extension
+    SFix d1(2,3);
+    d1.setInternalValue(0,0xFFFFFFFF);  // negative number
+    SFix d2 = d1.extendMSBs(129);
+    if (d2.toHexString() != "ffffffffffffffffffffffffffffffffffffffff")
+    {
+        printf("test 6\n");
+        std::string s = d2.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted ffffffffffffffffffffffffffffffffffffffff\n");
+        return false;
+    }
+
+    d1.setInternalValue(0,0x0000000F);  // positive number
+    d2 = d1.extendMSBs(129);
+    if (d2.toHexString() != "000000000000000000000000000000000000000f")
+    {
+        printf("test 7\n");
+        std::string s = d2.toHexString();
+        printf("Error: got    %s\n", s.c_str());
+        printf("       wanted 000000000000000000000000000000000000000f\n");
+        return false;
     }
 
     return true;

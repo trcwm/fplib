@@ -493,6 +493,7 @@ std::string SFixRef::toDecString() const
         a = a.negate();
     }
 
+    int32_t precisionBits3x = a.fracBits()*3;
     while(a.fracBits() > 0)
     {
         SFixRef x8 = a.reinterpret(a.intBits()+3, a.fracBits()-3);    // mul by 8
@@ -502,6 +503,11 @@ std::string SFixRef::toDecString() const
         digit = digit.removeMSBs(digit.intBits()-4);
         a = a - digit;
         num += digit.toHexString();
+        precisionBits3x -= 10;
+        if (precisionBits3x < 0)
+        {
+            break;
+        }
     }
     return num;
 }
